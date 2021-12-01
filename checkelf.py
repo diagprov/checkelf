@@ -241,6 +241,9 @@ class ELFObject(object):
                 value = flagsentry.entry.d_val
                 if value == 8:
                     self.mitigation_relro = MitRelRO.FULL
+            bindnow = list(filter(lambda x: x.entry.d_tag == 'DT_BIND_NOW', dyntags))
+            if len(bindnow) > 0:
+                self.mitigation_relro = MitRelRO.FULL
 
     def _check_symbols(self):
         self.bsymbols = self.__elffile__.get_section_by_name('.symtab') != None
