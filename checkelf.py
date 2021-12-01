@@ -107,8 +107,11 @@ class ELFObject(object):
 
     __elffile__ = None
 
-    def __init__(self, fileobject):
-        self.md5, self.sha1, self.sha256, self.sha3_256 = _compute_hashes(fileobject)
+    def __init__(self, fileobject, hashing=True):
+        if hashing:
+            self.md5, self.sha1, self.sha256, self.sha3_256 = _compute_hashes(fileobject)
+        else:
+            self.md5, self.sha1, self.sha256, self.sha3_256 = '','','',''
 
         self.__elffile__ = ELFFile(fileobject)
         self.__dwarf__ = self.__elffile__.get_dwarf_info()
@@ -200,6 +203,10 @@ class ELFObject(object):
 
     def _acquire_interpreter(self):
         interp = self.__elffile__.get_section_by_name(".interp")
+        if interp == None:
+            self.interpreter = ''
+            return
+
         interpreter = interp.data().decode("utf-8").strip("\x00")
         self.interpreter = interpreter
 
