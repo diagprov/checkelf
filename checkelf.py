@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import os
 import sys
+import json
 
 from enum import Enum
 from elftools.elf.elffile import ELFFile
@@ -218,6 +219,7 @@ class ELFObject(object):
         self._check_canary()
         self._check_stack()
         self._check_fortify()
+        self._check_excepttable()
         self._heuristic_ehframe()
         self._heuristic_vtables()
         self._heuristic_compiler()
@@ -282,6 +284,10 @@ class ELFObject(object):
         for imprt in self.imports:
             if imprt.startswith("_chk"):
                 self.mitigation_fortify = MitFortify.YES
+
+
+    def _check_excepttable(self):
+        self.excepttable = '.gcc_except_table' in self.section_names
 
     def _heuristic_ehframe(self):
         self.behframe = self.__dwarf__.eh_frame_sec != None
@@ -375,6 +381,7 @@ class ELFObject(object):
             'Compiler Info': (self.compilerinfo),
             'Language': (LanguageNames[self.language]),
             'EH Frame': "yes" if self.behframe else "no",
+            'gcc_except_table': "yes" if self.excepttable else "no",
             'VTables': "yes" if len(self.vtable_symbols) > 0 else "no",
             'LIBS': self.libs,
             'MD5' : self.md5,
@@ -410,3 +417,4 @@ if __name__ == '__main__':
         e = ELFObject(f)
         e.checks()
         e.report()
+        print(json.dumps(e.report_json()))
