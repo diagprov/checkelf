@@ -108,7 +108,8 @@ class ELFObject(object):
 
     __elffile__ = None
 
-    def __init__(self, fileobject, hashing=True):
+    def __init__(self, fileobject, path, hashing=True):
+        self.path = os.path.abspath(path)
         if hashing:
             self.md5, self.sha1, self.sha256, self.sha3_256 = _compute_hashes(fileobject)
         else:
@@ -369,6 +370,7 @@ class ELFObject(object):
     def report_json(self):
 
         reportobj = {
+            'FILE': os.path.basename(self.path),
             'Entry Point': hex(self.entrypoint),
             'Linking': ("dynamic" if self.linktype == LinkType.DYNAMIC else "static"),
             'Interpreter': self.interpreter,
@@ -404,6 +406,12 @@ def __helper_report(file):
         e.report()
 
 
+def libs_to_links(libs):
+    lflags = []
+    for lib in libs:
+        lflag = "-l%s" % lib[3:].split(".so")[0]
+        lflags.append(lflag)
+    return lflags
 
 if __name__ == '__main__':
 
@@ -414,7 +422,9 @@ if __name__ == '__main__':
 
     fname = args.file
     with open(fname, 'rb') as f:
-        e = ELFObject(f)
+        e = ELFObject(f, path=fname)
         e.checks()
         e.report()
+        reportobj = e.report_json()
+        print(libs_to_links(reportobj['LIBS']))
         print(json.dumps(e.report_json()))
