@@ -203,6 +203,11 @@ class ELFObject(object):
                 libu = lib.decode("utf-8")
             self.libs.append(libu)
 
+        if len(self.libs) > 0:
+            self.lflags = ELFObject.libs_to_links(self.libs)
+        else:
+            self.lflags = ''
+
     def _acquire_interpreter(self):
         interp = self.__elffile__.get_section_by_name(".interp")
         if interp == None:
@@ -366,6 +371,13 @@ class ELFObject(object):
                 self.language = Language.CXX
                 return
 
+    @classmethod
+    def libs_to_links(cls, libs):
+        lflags = []
+        for lib in libs:
+            lflag = "-l%s" % lib[3:].split(".so")[0]
+            lflags.append(lflag)
+        return lflags
 
     def report_json(self):
 
@@ -386,6 +398,7 @@ class ELFObject(object):
             'gcc_except_table': "yes" if self.excepttable else "no",
             'VTables': "yes" if len(self.vtable_symbols) > 0 else "no",
             'LIBS': self.libs,
+            'LFLAGS': self.lflags,
             'MD5' : self.md5,
             'SHA1' : self.sha1,
             'SHA256': self.sha256,
@@ -406,13 +419,6 @@ def __helper_report(file):
         e.report()
 
 
-def libs_to_links(libs):
-    lflags = []
-    for lib in libs:
-        lflag = "-l%s" % lib[3:].split(".so")[0]
-        lflags.append(lflag)
-    return lflags
-
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description="Check ELF File for various characteristics")
@@ -426,5 +432,4 @@ if __name__ == '__main__':
         e.checks()
         e.report()
         reportobj = e.report_json()
-        print(libs_to_links(reportobj['LIBS']))
         print(json.dumps(e.report_json()))
