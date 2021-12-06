@@ -204,7 +204,7 @@ class ELFObject(object):
             self.libs.append(libu)
 
         if len(self.libs) > 0:
-            self.lflags = ELFObject.libs_to_links(self.libs)
+            self.lflags = ' '.join(ELFObject.libs_to_links(self.libs))
         else:
             self.lflags = ''
 
